@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="4TIS SaaS - Sistema de Gestão de TI completo e moderno">
+    <meta name="keywords" content="gestão, TI, equipamentos, colaboradores, chamados, SaaS">
+    <meta name="author" content="4TIS Team">
+    
+    <title>4TIS - Sistema de Gestão de TI</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>">
+    
+    <!-- Tailwind CSS CDN - Desenvolvimento -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Suprimir warning do Tailwind CDN
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = { corePlugins: { preflight: false } };
+        }
+    </script>
+    
+    <!-- Estilos customizados -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="loading-spinner mb-4"></div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">4TIS SaaS</h2>
+            <p class="text-gray-600">Carregando sistema...</p>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="appContainer" class="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>4TIS</h1>
+                    <span class="header-subtitle">Sistema de Gestão de TI</span>
+                </div>
+                <div class="header-actions">
+                    <div class="user-info" id="userInfo">
+                        <div class="user-avatar">H</div>
+                        <span>Hudson Adley</span>
+                    </div>
+                    <button class="btn btn-secondary" onclick="showCurrentChangelog()" data-tooltip="Ver novidades da versão">
+                        <span>📋</span>
+                        <span class="hidden sm:inline">Novidades</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="logout()" data-tooltip="Sair do sistema (Ctrl+Q)">
+                        <span>🚪</span>
+                        <span class="hidden sm:inline">Sair</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs-container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('dashboard')" data-tooltip="Dashboard principal (Alt+1)">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-tab" onclick="switchTab('employees')" data-tooltip="Gerenciar colaboradores (Alt+2)">
+                    <span class="icon">👥</span>
+                    <span>Colaboradores</span>
+                    <span id="employeeAlertBadge" class="alert-badge hidden"></span>
+                </button>
+                <button class="nav-tab" onclick="switchTab('equipment')" data-tooltip="Inventário de equipamentos (Alt+3)">
+                    <span class="icon">💻</span>
+                    <span>Equipamentos</span>
+                </button>
+                <button class="nav-tab" onclick="switchTab('tickets')" data-tooltip="Sistema de chamados (Alt+4)">
+                    <span class="icon">🎫</span>
+                    <span>Chamados</span>
+                </button>
+                <button class="nav-tab" onclick="switchTab('settings')" data-tooltip="Configurações do sistema (Alt+5)">
+                    <span class="icon">⚙️</span>
+                    <span>Configurações</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="dashboard-tab">
+                <div id="dashboard-content">
+                    <!-- Conteúdo será carregado dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Employees Tab -->
+            <div class="tab-content" id="employees-tab">
+                <div id="employees-content">
+                    <!-- Conteúdo será carregado dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Equipment Tab -->
+            <div class="tab-content" id="equipment-tab">
+                <div id="equipment-content">
+                    <!-- Conteúdo será carregado dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Tickets Tab -->
+            <div class="tab-content" id="tickets-tab">
+                <div id="tickets-content">
+                    <!-- Conteúdo será carregado dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings-tab">
+                <div id="settings-content">
+                    <!-- Conteúdo será carregado dinamicamente -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer">
+        <!-- Modais serão inseridos aqui dinamicamente -->
+    </div>
+
+    <!-- Toast Container - Deve estar no final para z-index funcionar -->
+    <div id="toastContainer" class="fixed top-5 right-5 space-y-3 pointer-events-none" style="z-index: 1080;">
+        <!-- Toasts serão inseridos aqui dinamicamente -->
+    </div>
+
+    <!-- Marca d'água da versão -->
+    <div class="fixed bottom-2 left-2 text-xs text-gray-400 pointer-events-none select-none" style="z-index: 1000;">
+        v1.0.19
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Configuração inicial para evitar FOUC (Flash of Unstyled Content)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove loading screen após carregar
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loadingScreen');
+                const appContainer = document.getElementById('appContainer');
+                
+                if (loadingScreen && appContainer) {
+                    loadingScreen.style.display = 'none';
+                    appContainer.style.display = 'block';
+                }
+            }, 1000);
+        });
+
+        // Service Worker para PWA (futuro)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // navigator.serviceWorker.register('/sw.js'); // Implementar no futuro
+            });
+        }
+    </script>
+
+    <!-- API Client -->
+    <script src="js/api.js?v=3"></script>
+    
+    <!-- Changelog System -->
+    <script src="js/changelog.js?v=3"></script>
+    
+    <!-- Script funcional simples -->
+    <script src="js/simple-app.js?v=3"></script>
+
+    <!-- Analytics e monitoramento (placeholder) -->
+    <script>
+        // Google Analytics ou similar seria adicionado aqui
+        // gtag('config', 'GA_MEASUREMENT_ID');
+    </script>
+
+    <!-- Schema.org para SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "4TIS SaaS",
+        "description": "Sistema de Gestão de TI completo para empresas",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "BRL"
+        }
+    }
+    </script>
+</body>
+</html>

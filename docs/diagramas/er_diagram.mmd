@@ -1,0 +1,50 @@
+[Diagrama do Banco de Dados]
+erDiagram
+    employees ||--o{ equipment : "possui"
+    equipment ||--o{ peripheral_assignments : "tem"
+    peripherals ||--o{ peripheral_assignments : "associado"
+    
+    employees {
+        string id PK
+        string name
+        string position
+        string email
+        string phone
+        string status
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    equipment {
+        string id PK
+        string name
+        string type
+        string brand
+        string model
+        string serial_number
+        decimal value
+        string status
+        string assigned_to FK
+        jsonb return_history
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    peripherals {
+        string id PK
+        string name
+        string model
+        integer quantity
+        integer quantity_in_use
+        text notes
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    peripheral_assignments {
+        string id PK
+        string equipment_id FK
+        string peripheral_id FK
+        integer quantity
+        timestamp created_at
+    }

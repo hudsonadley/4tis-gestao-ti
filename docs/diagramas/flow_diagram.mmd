@@ -1,0 +1,24 @@
+[Diagrama de Fluxo de Navegação]
+graph TD
+    A[Login] --> B[Dashboard]
+    B --> C[Colaboradores]
+    B --> D[Equipamentos]
+    B --> E[Periféricos]
+    
+    C --> C1[Lista de Colaboradores]
+    C1 --> C2[Detalhes do Colaborador]
+    C2 --> C3[Editar Colaborador]
+    C2 --> C4[Inativar Colaborador]
+    C4 --> C5[Checklist de Devolução]
+    C5 --> C6[Notificação RH]
+    
+    D --> D1[Lista de Equipamentos]
+    D1 --> D2[Detalhes do Equipamento]
+    D2 --> D3[Editar Equipamento]
+    D2 --> D4[Vincular Colaborador]
+    D2 --> D5[Histórico]
+    
+    E --> E1[Lista de Periféricos]
+    E1 --> E2[Detalhes do Periférico]
+    E2 --> E3[Editar Periférico]
+    E2 --> E4[Vincular Equipamento]

@@ -1,0 +1,372 @@
+/**
+ * Employees UI Module - Funcional
+ */
+
+class EmployeesUI {
+    static currentPage = 1;
+    static itemsPerPage = 10;
+    static filters = { search: '', status: '' };
+
+    // ... outros métodos ...
+
+    static handleInactivation(employee, equipments) {
+        const notReturnedEquipments = equipments.filter(eq => !document.getElementById(`eq_${eq.id}`).checked);
+        
+        // Adiciona ao histórico de devolução
+        notReturnedEquipments.forEach(eq => {
+            if (!eq.returnHistory) eq.returnHistory = [];
+            eq.returnHistory.push({
+                date: new Date().toISOString(),
+                type: 'não_devolvido',
+                employeeId: employee.id,
+                employeeName: employee.name,
+                reason: 'Equipamento não devolvido na inativação do colaborador'
+            });
+        });
+
+        // Atualiza status dos equipamentos
+        equipments.forEach(eq => {
+            const isReturned = document.getElementById(`eq_${eq.id}`).checked;
+            if (isReturned) {
+                // Devolvido - vai para o estoque
+                eq.assignedTo = null;
+                eq.status = 'stock';
+                eq.returnHistory.push({
+                    date: new Date().toISOString(),
+                    type: 'devolvido',
+                    employeeId: employee.id,
+                    employeeName: employee.name,
+                    reason: 'Devolução por inativação do colaborador'
+                });
+            } else {
+                // Não devolvido - mantém vinculado
+                eq.returned = false;
+            }
+        });
+
+        return notReturnedEquipments;
+    }
+
+    static saveEmployee(existingEmployee = null) {
+        const name = document.getElementById('employeeName').value.trim();
+        const position = document.getElementById('employeePosition').value.trim();
+        const email = document.getElementById('employeeEmail').value.trim();
+        const phone = document.getElementById('employeePhone').value.trim();
+        const status = document.getElementById('employeeStatus')?.value || 'active';
+
+        if (!name || !position) {
+            ToastManager.error('Nome e cargo são obrigatórios');
+            return;
+        }
+
+        if (email && !Utils.isValidEmail(email)) {
+            ToastManager.error('Email inválido');
+            return;
+        }
+
+        const appState = window.appState || { employees: [] };
+
+        // Se está inativando um colaborador
+        if (existingEmployee && status === 'inactive' && existingEmployee.status === 'active') {
+            const equipments = appState.equipment?.filter(eq => eq.assignedTo === existingEmployee.id) || [];
+            const notReturnedEquipments = this.handleInactivation(existingEmployee, equipments);
+        }
+
+        if (existingEmployee) {
+            // Editar existente
+            const index = appState.employees.findIndex(emp => emp.id === existingEmployee.id);
+            if (index !== -1) {
+                appState.employees[index] = {
+                    ...appState.employees[index],
+                    name,
+                    position,
+                    email,
+                    phone,
+                    status,
+                    updatedAt: new Date().toISOString()
+                };
+            }
+        } else {
+            // Criar novo
+            const newEmployee = {
+                id: Utils.generateId('EMP'),
+                name,
+                position,
+                email,
+                phone,
+                status: 'active',
+                equipment: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            appState.employees.push(newEmployee);
+        }
+
+        // Salvar no storage
+        const storageManager = new StorageManager();
+        if (storageManager.save(appState)) {
+            window.appState = appState;
+            this.closeModal('employeeModal');
+            this.loadEmployees();
+
+            if (existingEmployee && status === 'inactive' && existingEmployee.status === 'active') {
+                const equipamentosPresos = appState.equipment?.filter(eq => 
+                    eq.assignedTo === existingEmployee.id && !eq.returned
+                ) || [];
+                
+                if (equipamentosPresos.length > 0) {
+                    ToastManager.warning(`Colaborador inativado com ${equipamentosPresos.length} equipamento(s) não devolvido(s)`);
+                } else {
+                    ToastManager.success('Colaborador inativado e todos equipamentos devolvidos!');
+                }
+            } else {
+                ToastManager.success(existingEmployee ? 'Colaborador atualizado!' : 'Colaborador cadastrado!');
+            }
+        }
+    }
+
+    static openModal(employee = null) {
+        const isEdit = !!employee;
+        const modalId = 'employeeModal';
+        const appState = window.appState || {};
+        
+        const equipmentListHtml = isEdit ? 
+            ((appState.equipment || [])
+                .filter(eq => eq.assignedTo === employee.id)
+                .map(eq => `
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="eq_${eq.id}" class="equipmentReturn" 
+                               data-equipment-id="${eq.id}">
+                        <label for="eq_${eq.id}">
+                            ${eq.name} (${eq.id}) - Marca: ${eq.brand || 'N/A'} 
+                            - Valor: R$${eq.value || 0}
+                        </label>
+                    </div>
+                `).join('') || 'Nenhum equipamento vinculado'
+            ) : '';
+
+        const modalHTML = `
+            <div class="modal active" id="${modalId}">
+                <div class="modal-content max-w-md w-full mx-4">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            ${isEdit ? 'Editar' : 'Cadastrar'} Colaborador
+                        </h3>
+                        <button onclick="EmployeesUI.closeModal('${modalId}')" class="text-gray-400 hover:text-gray-600">
+                            <span class="text-2xl">&times;</span>
+                        </button>
+                    </div>
+                    <form id="employeeForm" class="p-6 space-y-4">
+                        <div class="form-group">
+                            <label>Nome Completo *</label>
+                            <input type="text" id="employeeName" required 
+                                   value="${employee ? employee.name : ''}"
+                                   placeholder="Nome completo">
+                        </div>
+                        <div class="form-group">
+                            <label>Cargo *</label>
+                            <input type="text" id="employeePosition" required 
+                                   value="${employee ? employee.position : ''}"
+                                   placeholder="Cargo do colaborador">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="employeeEmail" 
+                                   value="${employee ? employee.email || '' : ''}"
+                                   placeholder="email@empresa.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Telefone</label>
+                            <input type="tel" id="employeePhone" 
+                                   value="${employee ? employee.phone || '' : ''}"
+                                   placeholder="(11) 99999-9999">
+                        </div>
+                        ${isEdit ? `
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="employeeStatus" onchange="EmployeesUI.handleStatusChange(this.value)">
+                                <option value="active" ${employee.status === 'active' ? 'selected' : ''}>Ativo</option>
+                                <option value="inactive" ${employee.status === 'inactive' ? 'selected' : ''}>Inativo</option>
+                            </select>
+                        </div>
+                        <div id="devolutionCheckList" class="form-group bg-yellow-50 p-4 rounded-lg" style="display: none;">
+                            <label class="font-bold text-red-600 block mb-2">Marque os equipamentos que foram devolvidos:</label>
+                            <div class="space-y-2">
+                                ${equipmentListHtml}
+                            </div>
+                            <p class="mt-2 text-sm text-gray-600">
+                                ⚠️ Equipamentos não marcados ficarão vinculados ao colaborador como "não devolvidos"
+                            </p>
+                        </div>
+                        ` : ''}
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="EmployeesUI.closeModal('${modalId}')">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                ${isEdit ? 'Atualizar' : 'Salvar'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        document.getElementById('employeeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveEmployee(employee);
+        });
+    }
+
+    static handleStatusChange(status) {
+        const devolutionCheckList = document.getElementById('devolutionCheckList');
+        if (status === 'inactive') {
+            devolutionCheckList.style.display = 'block';
+        } else {
+            devolutionCheckList.style.display = 'none';
+        }
+    }
+
+    static viewEmployee(id) {
+        const appState = window.appState || {};
+        const employee = appState.employees?.find(emp => emp.id === id);
+        
+        if (!employee) {
+            ToastManager.error('Colaborador não encontrado');
+            return;
+        }
+
+        const equipment = appState.equipment?.filter(eq => eq.assignedTo === id) || [];
+        const presos = equipment.filter(eq => employee.status === 'inactive' && !eq.returned);
+        
+        const presosHtml = presos.length > 0
+            ? presos.map(eq => `
+                <div class="p-2 border border-red-200 rounded-lg mb-2 bg-red-50">
+                    <div class="font-bold text-red-600">${eq.name} (${eq.id})</div>
+                    <div class="text-sm">
+                        Marca: ${eq.brand || 'N/A'}<br>
+                        Valor: R$${eq.value || 0}
+                    </div>
+                </div>
+              `).join('')
+            : '<span class="text-green-600">Nenhum equipamento preso</span>';
+
+        const rhMsg = encodeURIComponent(
+            `Prezados,\n\n` +
+            `Informo que o(a) colaborador(a) ${employee.name} (ID: ${employee.id}) foi inativado(a) com os seguintes equipamentos pendentes de devolução:\n\n` +
+            presos.map(eq => 
+                `- ${eq.name} (${eq.id})\n` +
+                `  Marca: ${eq.brand || 'N/A'}\n` +
+                `  Valor: R$${eq.value || 0}`
+            ).join('\n\n') +
+            `\n\nValor total pendente: R$${presos.reduce((total, eq) => total + (eq.value || 0), 0)}\n\n` +
+            `Atenciosamente,\nGestão de TI`
+        );
+
+        const modalHTML = `
+            <div class="modal active" id="viewEmployeeModal">
+                <div class="modal-content max-w-lg w-full mx-4">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-900">Colaborador: ${employee.name}</h3>
+                        <button onclick="EmployeesUI.closeModal('viewEmployeeModal')" class="text-gray-400 hover:text-gray-600">
+                            <span class="text-2xl">&times;</span>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div><strong>ID:</strong> ${employee.id}</div>
+                            <div><strong>Nome:</strong> ${employee.name}</div>
+                            <div><strong>Cargo:</strong> ${employee.position}</div>
+                            <div><strong>Email:</strong> ${employee.email || 'Não informado'}</div>
+                            <div><strong>Telefone:</strong> ${employee.phone || 'Não informado'}</div>
+                            <div><strong>Status:</strong> 
+                                <span class="status-badge ${employee.status === 'active' ? 'status-active' : 'status-inactive'}">
+                                    ${employee.status === 'active' ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </div>
+                            <div><strong>Equipamentos:</strong> 
+                                ${equipment.length > 0 ? 
+                                    equipment.map(eq => `${eq.name} (${eq.id})`).join(', ') : 
+                                    'Nenhum equipamento atribuído'
+                                }
+                            </div>
+                            ${employee.status === 'inactive' ? `
+                            <div class="mt-4">
+                                <strong class="block mb-2">Equipamentos presos por não devolução:</strong>
+                                <div class="space-y-2">
+                                    ${presosHtml}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="mt-6 flex flex-col gap-2">
+                            <div class="flex gap-2 justify-end">
+                                <button class="btn btn-secondary" onclick="EmployeesUI.closeModal('viewEmployeeModal')">
+                                    Fechar
+                                </button>
+                                <button class="btn btn-primary" onclick="EmployeesUI.closeModal('viewEmployeeModal'); EmployeesUI.editEmployee('${id}')">
+                                    Editar
+                                </button>
+                            </div>
+                            ${employee.status === 'inactive' && presos.length > 0 ? `
+                            <button class="btn btn-warning w-full" onclick="EmployeesUI.copyRhMessage('${rhMsg}')">
+                                📧 Informar RH
+                            </button>
+                            <button class="btn btn-success w-full" onclick="EmployeesUI.resolverPendencia('${id}')">
+                                ✅ Resolver Pendência
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    static copyRhMessage(msg) {
+        navigator.clipboard.writeText(decodeURIComponent(msg));
+        ToastManager.success('Mensagem para o RH copiada!');
+    }
+
+    static resolverPendencia(id) {
+        const appState = window.appState;
+        const employee = appState.employees?.find(emp => emp.id === id);
+        
+        if (!employee) {
+            ToastManager.error('Colaborador não encontrado');
+            return;
+        }
+
+        let alterados = 0;
+        appState.equipment?.forEach(eq => {
+            if (eq.assignedTo === id && employee.status === 'inactive' && !eq.returned) {
+                eq.assignedTo = null;
+                eq.status = 'stock';
+                eq.returned = true;
+                eq.returnHistory.push({
+                    date: new Date().toISOString(),
+                    type: 'devolvido',
+                    employeeId: employee.id,
+                    employeeName: employee.name,
+                    reason: 'Devolução posterior à inativação'
+                });
+                alterados++;
+            }
+        });
+
+        if (alterados > 0) {
+            const storageManager = new StorageManager();
+            storageManager.save(appState);
+            window.appState = appState;
+            ToastManager.success(`Pendência resolvida! ${alterados} equipamento(s) devolvido(s).`);
+            EmployeesUI.closeModal('viewEmployeeModal');
+            EmployeesUI.loadEmployees();
+        } else {
+            ToastManager.info('Nenhum equipamento pendente para resolver.');
+        }
+    }
+}
