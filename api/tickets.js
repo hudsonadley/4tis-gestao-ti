@@ -32,11 +32,26 @@ router.get('/:id', async (req, res) => {
 // POST /api/tickets - Criar novo chamado
 router.post('/', async (req, res) => {
   try {
-    const { id, glpi_id, requestor, equipment_type, service_type, requested_for_user, location, status = 'novo', ticket_type, justification } = req.body;
+    const { 
+      title, 
+      description, 
+      priority = 'medium', 
+      status = 'open', 
+      assigned_to, 
+      created_by, 
+      external_ticket_number, 
+      category 
+    } = req.body;
+    
+    // Gerar ID único se não fornecido
+    const id = req.body.id || `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const result = await pool.query(
-      'INSERT INTO tickets (id, glpi_id, requestor, equipment_type, service_type, requested_for_user, location, status, ticket_type, justification) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-      [id, glpi_id, requestor, equipment_type, service_type, requested_for_user, location, status, ticket_type, justification]
+      `INSERT INTO tickets (
+        id, title, description, priority, status, assigned_to, created_by, 
+        external_ticket_number, category
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [id, title, description, priority, status, assigned_to, created_by, external_ticket_number, category]
     );
     
     res.status(201).json(result.rows[0]);

@@ -32,11 +32,24 @@ router.get('/:id', async (req, res) => {
 // POST /api/employees - Criar novo colaborador
 router.post('/', async (req, res) => {
   try {
-    const { id, name, position, email, phone, status = 'active' } = req.body;
+    const { 
+      name, 
+      position, 
+      email, 
+      phone, 
+      department, 
+      admission_date, 
+      status = 'active' 
+    } = req.body;
+    
+    // Gerar ID único se não fornecido
+    const id = req.body.id || `EMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const result = await pool.query(
-      'INSERT INTO employees (id, name, position, email, phone, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [id, name, position, email, phone, status]
+      `INSERT INTO employees (
+        id, name, position, email, phone, department, admission_date, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [id, name, position, email, phone, department, admission_date, status]
     );
     
     res.status(201).json(result.rows[0]);
