@@ -35,6 +35,7 @@ const assignmentsRouter = require('./api/assignments')(pool);
 const peripheralsRouter = require('./api/peripherals')(pool);
 const equipmentTypesRouter = require('./api/equipment-types')(pool);
 const alertsRouter = require('./api/alerts')(pool);
+const offboardingRouter = require('./api/offboarding')(pool);
 
 // Rotas da API
 app.use('/api/employees', employeesRouter);
@@ -44,6 +45,7 @@ app.use('/api/assignments', assignmentsRouter);
 app.use('/api/peripherals', peripheralsRouter);
 app.use('/api/equipment-types', equipmentTypesRouter);
 app.use('/api/alerts', alertsRouter);
+app.use('/api/offboarding', offboardingRouter);
 
 // Serve static files
 app.get('/', (req, res) => {
@@ -293,14 +295,45 @@ app.post('/migrate', async (req, res) => {
       )
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS offboarding_records (
+        id VARCHAR(50) PRIMARY KEY,
+        employee_id VARCHAR(50) NOT NULL,
+        employee_name VARCHAR(255) NOT NULL,
+        offboarding_date TIMESTAMP NOT NULL,
+        returned_equipment_count INTEGER DEFAULT 0,
+        pending_equipment_count INTEGER DEFAULT 0,
+        notes TEXT,
+        status VARCHAR(30) DEFAULT 'completed',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (employee_id) REFERENCES employees(id)
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS pending_resolutions (
+        id SERIAL PRIMARY KEY,
+        employee_id VARCHAR(50) NOT NULL,
+        equipment_id VARCHAR(50) NOT NULL,
+        resolution_type VARCHAR(30) NOT NULL,
+        resolution_date TIMESTAMP NOT NULL,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (employee_id) REFERENCES employees(id),
+        FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+      )
+    `);
+
     // Adicionar colunas que podem estar faltando
     try {
       await pool.query('ALTER TABLE equipment ADD COLUMN IF NOT EXISTS patrimony VARCHAR(100)');
       await pool.query('ALTER TABLE equipment ADD COLUMN IF NOT EXISTS observations TEXT');
+      await pool.query('ALTER TABLE equipment ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP');
       await pool.query('ALTER TABLE employees ADD COLUMN IF NOT EXISTS department VARCHAR(100)');
       await pool.query('ALTER TABLE employees ADD COLUMN IF NOT EXISTS admission_date DATE');
       await pool.query('ALTER TABLE tickets ADD COLUMN IF NOT EXISTS external_ticket_number VARCHAR(100)');
       await pool.query('ALTER TABLE tickets ADD COLUMN IF NOT EXISTS category VARCHAR(100)');
+      await pool.query('ALTER TABLE equipment_return_history ADD COLUMN IF NOT EXISTS usage_days INTEGER');
     } catch (err) {
       console.log('Colunas já existem ou erro:', err.message);
     }

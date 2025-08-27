@@ -90,6 +90,92 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// POST /api/equipment/return - Devolver equipamento individual
+router.post('/return', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const { equipment_id, return_notes, returned_by } = req.body;
+    
+    if (!equipment_id || !return_notes) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'ID do equipamento e observações são obrigatórios' });
+    }
+    
+    // Buscar equipamento
+    const equipmentResult = await client.query(
+      'SELECT * FROM equipment WHERE id = $1',
+      [equipment_id]
+    );
+    
+    if (equipmentResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Equipamento não encontrado' });
+    }
+    
+    const equipment = equipmentResult.rows[0];
+    
+    if (!equipment.assigned_to) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Equipamento não está atribuído a nenhum colaborador' });
+    }
+    
+    // Buscar dados do colaborador
+    const employeeResult = await client.query(
+      'SELECT * FROM employees WHERE id = $1',
+      [equipment.assigned_to]
+    );
+    
+    const employee = employeeResult.rows[0];
+    
+    // Calcular tempo de uso
+    const assignedDate = equipment.assigned_at || equipment.created_at;
+    const returnDate = new Date();
+    const usageDays = Math.floor((returnDate - new Date(assignedDate)) / (1000 * 60 * 60 * 24));
+    
+    // Atualizar status do equipamento
+    await client.query(
+      'UPDATE equipment SET status = $1, assigned_to = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      ['available', equipment_id]
+    );
+    
+    // Registrar no histórico
+    await client.query(
+      `INSERT INTO equipment_return_history 
+       (equipment_id, employee_id, employee_name, return_date, return_notes, returned_by, usage_days) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        equipment_id,
+        equipment.assigned_to,
+        employee ? employee.name : 'Colaborador não encontrado',
+        returnDate,
+        return_notes,
+        returned_by || 'Sistema',
+        usageDays
+      ]
+    );
+    
+    await client.query('COMMIT');
+    
+    res.json({
+      success: true,
+      message: 'Equipamento devolvido com sucesso',
+      equipment: equipment,
+      employee: employee,
+      usage_days: usageDays
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao devolver equipamento:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // GET /api/equipment/:id/history - Buscar histórico de devolução
 router.get('/:id/history', async (req, res) => {
   try {
@@ -101,23 +187,6 @@ router.get('/:id/history', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Erro ao buscar histórico:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST /api/equipment/return-history - Salvar histórico de devolução
-router.post('/return-history', async (req, res) => {
-  try {
-    const { equipment_id, employee_id, employee_name, return_date, return_notes, returned_by } = req.body;
-    
-    const result = await pool.query(
-      'INSERT INTO equipment_return_history (equipment_id, employee_id, employee_name, return_date, return_notes, returned_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [equipment_id, employee_id, employee_name, return_date, return_notes, returned_by]
-    );
-    
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error('Erro ao salvar histórico:', error);
     res.status(500).json({ error: error.message });
   }
 });
