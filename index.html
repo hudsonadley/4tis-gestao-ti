@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Almoxarifado</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📦 Sistema de Almoxarifado</h1>
+            <nav class="nav">
+                <button class="nav-btn active" data-tab="colaboradores">👥 Colaboradores</button>
+                <button class="nav-btn" data-tab="equipamentos">💻 Equipamentos</button>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Aba Colaboradores -->
+            <section id="colaboradores" class="tab-content active">
+                <div class="section-header">
+                    <h2>Colaboradores</h2>
+                    <button class="btn btn-primary" onclick="openAddCollaboratorModal()">
+                        ➕ Cadastrar Colaborador
+                    </button>
+                </div>
+
+                <!-- Filtros -->
+                <div class="filters">
+                    <input type="text" id="searchCollaborators" placeholder="Buscar por nome, cargo ou email..." class="search-input">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">Todos os status</option>
+                        <option value="ativo">Ativo</option>
+                        <option value="inativo">Inativo</option>
+                    </select>
+                    <select id="itemsPerPageCollaborators" class="filter-select">
+                        <option value="10">10 por página</option>
+                        <option value="25">25 por página</option>
+                        <option value="50">50 por página</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="clearFiltersCollaborators()">🗑️ Limpar</button>
+                </div>
+
+                <!-- Lista de Colaboradores -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Cargo</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Equipamentos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collaboratorsTableBody">
+                            <!-- Dados serão inseridos aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginação -->
+                <div class="pagination" id="collaboratorsPagination">
+                    <!-- Paginação será inserida aqui via JavaScript -->
+                </div>
+            </section>
+
+            <!-- Aba Equipamentos -->
+            <section id="equipamentos" class="tab-content">
+                <div class="section-header">
+                    <h2>Equipamentos</h2>
+                    <button class="btn btn-primary" onclick="openAddEquipmentModal()">
+                        ➕ Cadastrar Equipamento
+                    </button>
+                </div>
+
+                <!-- Filtros -->
+                <div class="filters">
+                    <input type="text" id="searchEquipments" placeholder="Buscar por nome, marca ou modelo..." class="search-input">
+                    <select id="equipmentStatusFilter" class="filter-select">
+                        <option value="">Todos os status</option>
+                        <option value="estoque">Em Estoque</option>
+                        <option value="vinculado">Vinculado</option>
+                        <option value="inativo">Inativo</option>
+                    </select>
+                    <select id="equipmentTypeFilter" class="filter-select">
+                        <option value="">Todos os tipos</option>
+                        <option value="unico">Uso Único</option>
+                        <option value="multiplo">Uso Múltiplo</option>
+                    </select>
+                    <select id="itemsPerPageEquipments" class="filter-select">
+                        <option value="10">10 por página</option>
+                        <option value="25">25 por página</option>
+                        <option value="50">50 por página</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="clearFiltersEquipments()">🗑️ Limpar</button>
+                </div>
+
+                <!-- Lista de Equipamentos -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Vinculado a</th>
+                            </tr>
+                        </thead>
+                        <tbody id="equipmentsTableBody">
+                            <!-- Dados serão inseridos aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginação -->
+                <div class="pagination" id="equipmentsPagination">
+                    <!-- Paginação será inserida aqui via JavaScript -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer"></div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
+
