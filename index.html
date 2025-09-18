@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Almoxarifado</title>
+    <title>4TIS Gestão de TI</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>📦 Sistema de Almoxarifado</h1>
+            <h1>🏢 4TIS Gestão de TI</h1>
             <nav class="nav">
                 <button class="nav-btn active" data-tab="colaboradores">👥 Colaboradores</button>
                 <button class="nav-btn" data-tab="equipamentos">💻 Equipamentos</button>
@@ -130,6 +131,8 @@
     <div id="modalContainer"></div>
 
     <!-- Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="supabase-service.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
