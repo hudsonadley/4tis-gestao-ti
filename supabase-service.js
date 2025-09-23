@@ -1,7 +1,9 @@
 // Serviço para operações com Supabase
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config.js';
+
 class SupabaseService {
     constructor() {
-        this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        this.supabase = supabase;
         this.isOnline = navigator.onLine;
         this.setupOfflineHandling();
     }
@@ -396,6 +398,5 @@ class SupabaseService {
     }
 }
 
-// Instância global do serviço
-const supabaseService = new SupabaseService();
+export { SupabaseService };
 

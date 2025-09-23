@@ -1,3 +1,7 @@
+import { SupabaseService } from './supabase-service.js';
+
+const supabaseService = new SupabaseService();
+
 // Sistema de Almoxarifado - JavaScript Principal
 
 // Estado atual da aplicação
