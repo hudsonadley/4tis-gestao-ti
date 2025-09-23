@@ -22,13 +22,22 @@ let currentState = {
 
 // Event Listeners
 document.addEventListener("DOMContentLoaded", async () => {
-    await initializeApp();
+    try {
+        console.log("Iniciando initializeApp...");
+        setupEventListeners();
+        // Garante que o SupabaseService esteja pronto antes de tentar buscar dados
+        await supabaseService.getCollaboradores(); // Apenas para garantir que a conexão foi estabelecida
+        await supabaseService.getEquipamentos(); // Apenas para garantir que a conexão foi estabelecida
+        switchTab(currentState.activeTab); // Renderiza a aba ativa após carregar os dados
+        console.log("initializeApp concluído.");
+    } catch (error) {
+        console.error("Erro durante a inicialização da aplicação:", error);
+        alert("Ocorreu um erro ao carregar a aplicação. Verifique o console para mais detalhes.");
+    }
 });
 
-async function initializeApp() {
-    setupEventListeners();
-    switchTab(currentState.activeTab); // Renderiza a aba ativa após carregar os dados
-}
+// A função initializeApp original não é mais necessária como async top-level
+// As chamadas de setupEventListeners e switchTab foram movidas para o DOMContentLoaded listener
     // Navegação entre abas
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', function() {
