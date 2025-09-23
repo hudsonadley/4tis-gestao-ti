@@ -27,18 +27,76 @@ let currentState = {
 // Event Listeners
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        console.log("Iniciando initializeApp...");
+        console.log("Iniciando a aplicação...");
         setupEventListeners();
-        // Garante que o SupabaseService esteja pronto antes de tentar buscar dados
-        await supabaseService.getCollaboradores(); // Apenas para garantir que a conexão foi estabelecida
-        await supabaseService.getEquipamentos(); // Apenas para garantir que a conexão foi estabelecida
-        switchTab(currentState.activeTab); // Renderiza a aba ativa após carregar os dados
-        console.log("initializeApp concluído.");
+        await switchTab(currentState.activeTab);
+        console.log("Aplicação inicializada com sucesso.");
     } catch (error) {
         console.error("Erro durante a inicialização da aplicação:", error);
         alert("Ocorreu um erro ao carregar a aplicação. Verifique o console para mais detalhes.");
     }
 });
+
+function setupEventListeners() {
+    // Navegação entre abas
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            switchTab(this.dataset.tab);
+        });
+    });
+
+    // Botões de cadastro
+    document.querySelector('[onclick="openAddCollaboratorModal()"').addEventListener('click', openAddCollaboratorModal);
+    document.querySelector('[onclick="openAddEquipmentModal()"').addEventListener('click', openAddEquipmentModal);
+
+    // Filtros de colaboradores
+    document.getElementById('searchCollaborators').addEventListener('input', function() {
+        currentState.colaboradoresFilters.search = this.value;
+        currentState.colaboradoresPage = 1;
+        renderCollaborators();
+    });
+
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        currentState.colaboradoresFilters.status = this.value;
+        currentState.colaboradoresPage = 1;
+        renderCollaborators();
+    });
+
+    document.getElementById('itemsPerPageCollaborators').addEventListener('change', function() {
+        currentState.colaboradoresFilters.itemsPerPage = parseInt(this.value);
+        currentState.colaboradoresPage = 1;
+        renderCollaborators();
+    });
+
+    document.querySelector('[onclick="clearFiltersCollaborators()"').addEventListener('click', clearFiltersCollaborators);
+
+    // Filtros de equipamentos
+    document.getElementById('searchEquipments').addEventListener('input', function() {
+        currentState.equipamentosFilters.search = this.value;
+        currentState.equipamentosPage = 1;
+        renderEquipments();
+    });
+
+    document.getElementById('equipmentStatusFilter').addEventListener('change', function() {
+        currentState.equipamentosFilters.status = this.value;
+        currentState.equipamentosPage = 1;
+        renderEquipments();
+    });
+
+    document.getElementById('equipmentTypeFilter').addEventListener('change', function() {
+        currentState.equipamentosFilters.type = this.value;
+        currentState.equipamentosPage = 1;
+        renderEquipments();
+    });
+
+    document.getElementById('itemsPerPageEquipments').addEventListener('change', function() {
+        currentState.equipamentosFilters.itemsPerPage = parseInt(this.value);
+        currentState.equipamentosPage = 1;
+        renderEquipments();
+    });
+
+    document.querySelector('[onclick="clearFiltersEquipments()"').addEventListener('click', clearFiltersEquipments);
+}
 
 // A função initializeApp original não é mais necessária como async top-level
 // As chamadas de setupEventListeners e switchTab foram movidas para o DOMContentLoaded listener
