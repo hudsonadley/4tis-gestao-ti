@@ -1032,3 +1032,8 @@ setupEventListeners();
 // Renderiza a aba ativa ao carregar a página
 switchTab(currentState.activeTab);
 
+
+
+// Chamada direta para inicializar a aplicação (para garantir execução em ambientes como Netlify)
+initializeApp();
+
