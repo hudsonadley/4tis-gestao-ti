@@ -18,10 +18,8 @@ let currentState = {
     }
 };
 
-// Inicialização da aplicação
-document.addEventListener('DOMContentLoaded', async function() {
-    await initializeApp();
-});
+console.log("script.js carregado!");
+document.addEventListener("DOMContentLoaded", initializeApp);
 
 async function initializeApp() {
     setupEventListeners();
