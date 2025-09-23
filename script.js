@@ -22,6 +22,7 @@ console.log("script.js carregado!");
 document.addEventListener("DOMContentLoaded", initializeApp);
 
 async function initializeApp() {
+    console.log("initializeApp() chamado!");
     setupEventListeners();
     switchTab(currentState.activeTab); // Renderiza a aba ativa após carregar os dados
 }
