@@ -139,14 +139,14 @@ function clearFiltersEquipments() {
     renderEquipments();
 }
 
-// Renderização de colaboradores
-async function renderCollaborators() {
+// Renderização de colaboradoresasync function renderCollaborators() {
     const tbody = document.getElementById("collaboratorsTableBody");
     const filters = currentState.colaboradoresFilters;
     
     console.log("Buscando colaboradores...");
     const allColaboradores = await supabaseService.getCollaboradores();
     console.log("Colaboradores encontrados:", allColaboradores);
+    const allEquipamentos = await supabaseService.getEquipamentos();boradores encontrados:", allColaboradores);
     const allEquipamentos = await supabaseService.getEquipamentos();
 
     // Filtrar dados
