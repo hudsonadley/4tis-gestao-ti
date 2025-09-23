@@ -18,17 +18,17 @@ let currentState = {
     }
 };
 
-console.log("script.js carregado!");
-document.addEventListener("DOMContentLoaded", initializeApp);
+
+
+// Event Listeners
+document.addEventListener("DOMContentLoaded", async () => {
+    await initializeApp();
+});
 
 async function initializeApp() {
-    console.log("initializeApp() chamado!");
     setupEventListeners();
     switchTab(currentState.activeTab); // Renderiza a aba ativa após carregar os dados
 }
-
-// Event Listeners
-function setupEventListeners() {
     // Navegação entre abas
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', function() {
